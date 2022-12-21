@@ -1,0 +1,42 @@
+version: '3.5'
+
+services:
+  postgres:
+    container_name: postgres_container
+    image: postgres:15.1-alpine
+    environment:
+      POSTGRES_USER: ${INITIAL_POSTGRES_USER:?err}  # only for initial setup
+      POSTGRES_PASSWORD: ${INITIAL_POSTGRES_PASS:?err}  # only for initial setup
+      PGDATA: /data/postgres
+    volumes:
+       - postgres:/data/postgres
+    networks:
+      - traefik-public
+
+  pgadmin:
+    container_name: pgadmin_container
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${INITIAL_PGADMIN_EMAIL:?err}  # only for initial setup
+      PGADMIN_DEFAULT_PASSWORD: ${INITIAL_PGADMIN_PASS:?err}  # only for initial setup
+      PGADMIN_CONFIG_SERVER_MODE: 'True'
+    volumes:
+       - pgadmin:/var/lib/pgadmin
+    networks:
+      - traefik-public
+    restart: unless-stopped
+    labels:
+      # enable traefik for this specific service
+      - traefik.enable=true
+      # use the traefik-public network (declared below)
+      - traefik.docker.network=traefik-public
+
+networks:
+  # use the previously created public network "traefik-public"
+  # create at first time via "docker network create traefik-public"
+  traefik-public:
+    external: true
+
+volumes:
+    postgres:
+    pgadmin:
