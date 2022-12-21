@@ -1,0 +1,28 @@
+version: '3.5'
+
+services:
+  postgres:
+    restart: unless-stopped
+    # no exposal on prod (neither directly nor via traefik), communicate only
+    # internally, use pgadmin to maintain
+    ports:
+      # traefik can't handle postgres (only HTTP), so expose it directly (only dev)
+      - "5432:5432"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.postgres-db.rule=Host(`postgres-db.${BASIC_AUTH_CREDENTIALS:?err}`)
+      - traefik.http.routers.postgres-db.tls=true
+      - traefik.http.routers.postgres-db.tls.certresolver=le
+
+  pgadmin:
+    labels:
+      - traefik.http.routers.pgadmin.entrypoints=https-ep
+      - traefik.http.routers.pgadmin.rule=Host(`pgadmin.${BASIC_AUTH_CREDENTIALS:?err}`)
+      - traefik.http.routers.pgadmin.tls=true
+      - traefik.http.routers.pgadmin.tls.certresolver=le
+#       enable basic auth as defined in traefik's docker compose file
+      - traefik.http.routers.pgadmin.middlewares=my-basic-auth
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${INITIAL_PGADMIN_EMAIL:?err}  # only for initial setup
+      PGADMIN_DEFAULT_PASSWORD: ${INITIAL_PGADMIN_PASS:?err}  # only for initial setup
+      PGADMIN_CONFIG_SERVER_MODE: 'True'

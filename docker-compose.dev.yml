@@ -1,0 +1,22 @@
+version: '3.5'
+
+services:
+  postgres:
+    restart: unless-stopped
+    ports:
+      # traefik can't handle postgres (only HTTP), so expose it directly (only dev)
+      - "5432:5432"
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      - traefik.http.routers.postgres-db-insecure.rule=Host(`postgres-db.localhost`)
+
+  
+  pgadmin:
+    labels:
+      - traefik.http.routers.pgadmin-insecure.entrypoints=http-ep
+      - traefik.http.routers.pgadmin-insecure.rule=Host(`pgadmin.localhost`)
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${INITIAL_PGADMIN_EMAIL:?err}  # required but not used
+      PGADMIN_DEFAULT_PASSWORD: ${INITIAL_PGADMIN_PASS:?err}  # required but not used
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
